@@ -171,6 +171,7 @@ sub _run {
         and kill 0, $pid
         and $GUARD--;
       $defaults->{pids}{$pid} = $args->{pids}{$pid} if kill 0, $pid;
+      return unless $c->tx;
       return $c->finish if $c->res->code;
       return $c->render(text => "Could not run CGI script ($?, $!).\n", status => 500);
     }
@@ -198,6 +199,8 @@ sub _stdout_cb {
   return sub {
     my ($stream, $chunk) = @_;
     warn "[$log_key] >>> ($chunk)\n" if DEBUG;
+
+    return unless eval { $c->tx };
 
     # true if HTTP header has been written to client
     return $c->write($chunk) if $headers;
